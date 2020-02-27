@@ -1,0 +1,5 @@
+default=0
+timeout=10
+
+title Scylla Kernel v0.1 by Mustafa Algayar
+kernel /boot/kernel.elf
