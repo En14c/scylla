@@ -17,6 +17,7 @@ LDFLAGS := -T link.ld -melf_i386
 # kernel source files
 KSOURCES := $(wildcard src/kernel/*.c)
 KSOURCES += $(wildcard src/drivers/*.c)
+KSOURCES += $(wildcard src/lib/*.c)
 
 # kernel object files
 KOBJECTS := $(patsubst %.c, %.o, $(KSOURCES))
@@ -28,6 +29,7 @@ KOBJECTS := $(patsubst %.c, %.o, $(KSOURCES))
 $(KOBJECTS):
 	$(MAKE) -C src/kernel/ CC="$(CC)" CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C src/drivers/ CC="$(CC)" CFLAGS="$(CFLAGS)"
+	$(MAKE) -C src/lib/ CC="$(CC)" CFLAGS="$(CFLAGS)"
 
 kentry.o: kentry.s
 	$(ASM) $(ASMFLAGS) kentry.s
