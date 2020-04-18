@@ -4,4 +4,5 @@
 void kmain(void)
 {
     init_screen();
+    init_gdt();
 }
