@@ -8,12 +8,14 @@ MULTIBOOTHEADER_MAGIC_NUMBER equ 0x1badb002
 MULTIBOOTHEADER_FLAGS        equ MULTIBOOTHEADER_FLAG_MEMINFO 
 MULTIBOOTHEADER_CHECKSUM     equ -(MULTIBOOTHEADER_MAGIC_NUMBER + MULTIBOOTHEADER_FLAGS)
 
-section .text
+section .multi_boot_header
 align 4 ; multiboot header must be 32bit aligned
     
     dd MULTIBOOTHEADER_MAGIC_NUMBER
     dd MULTIBOOTHEADER_FLAGS
     dd MULTIBOOTHEADER_CHECKSUM
+
+section .text
 
 _kstart:
     lea esp, [ kernelstack + KERNSTACK_SIZE ]  ; esp points to the bottom of the stack (high address)

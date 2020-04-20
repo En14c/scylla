@@ -3,6 +3,11 @@ ENTRY(_kstart)
 SECTIONS {
     . = 0x00100000;
 
+    .multi_boot_header :
+    {
+        *(.multi_boot_header)
+    }
+
     PROVIDE(k_stext = .);
     .text ALIGN(0x1000) :
     {
