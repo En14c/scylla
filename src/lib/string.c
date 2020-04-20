@@ -121,3 +121,33 @@ kstrlen (char *str)
 
    return _len;
 }
+
+/*
+ * fill memory pointed to by @mem /w a constant byte
+ * [+] return
+ *     - (NULL) if @len equals zero or is greater than the max
+ *       length
+ *     - pointer to @mem on success
+*/
+void*
+kmemset (void *mem, u8_t _char, u32_t len)
+{
+#define KMEMSET_MAX_LEN 0x2000
+
+    u32_t _err;
+    u8_t *_ptr;
+
+    _err = 0;
+    _ptr = (u8_t *)mem;
+
+    if (len == 0 || len > KMEMSET_MAX_LEN) {
+        _err = 1;
+        goto _end_kmemset;
+    }
+
+    for (;len; len--, _ptr++)
+        *_ptr = _char;
+
+_end_kmemset:
+    return _err ? NULL : mem;
+}
