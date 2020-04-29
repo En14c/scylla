@@ -19,6 +19,10 @@
 #define GDT_KERNEL_DS_INDX 0x2
 #define GDT_USER_CS_INDX   0x3
 #define GDT_USER_DS_INDX   0X4
+
+/* kernel code/data segments selectors */
+#define KERNEL_CS_SEL 0x08
+#define KERNEL_DS_SEL 0x10
    
 struct gdt_entry {
     u32_t limit_low: 16, base_low: 16;
@@ -33,7 +37,7 @@ struct gdt_ptr {
 }__attribute__((packed));
 
 
-void init_gdt(void);
+extern void init_gdt(void);
 
 
 #endif /* __GDT_H */

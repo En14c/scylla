@@ -1,6 +1,6 @@
 #include <compiler.h>
 #include <types.h>
-#include <kernel/gdt.h>
+#include <sys/gdt.h>
 
 
 static struct gdt_entry gdt[GDT_ENTRIES];
