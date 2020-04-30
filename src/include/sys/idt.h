@@ -3,7 +3,7 @@
 
 
 /* num of IDT entries */
-#define IDT_ENTRIES 0xff
+#define IDT_ENTRIES 0x100
 
 /* 
  * IDT descriptor types (/w DPL: 0)
