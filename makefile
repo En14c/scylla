@@ -15,19 +15,22 @@ LD := ld
 LDFLAGS := -T link.ld -melf_i386
 
 # kernel source files
-KSOURCES := $(wildcard src/kernel/*.c)
-KSOURCES += $(wildcard src/drivers/*.c)
-KSOURCES += $(wildcard src/lib/*.c)
+KCSOURCES := $(wildcard src/kernel/*.c)
+KCSOURCES += $(wildcard src/drivers/*.c)
+KCSOURCES += $(wildcard src/lib/*.c)
+KASMSOURCES := $(wildcard src/kernel/*.s)
 
 # kernel object files
-KOBJECTS := $(patsubst %.c, %.o, $(KSOURCES))
+KOBJECTS := $(patsubst %.c, %.o, $(KCSOURCES))
+KOBJECTS += $(patsubst %.s, %.o, $(KASMSOURCES))
 
 .PHONY: kernel.iso run clean
 
 .DEFAULT_GOAL := kernel.iso
 
 $(KOBJECTS):
-	$(MAKE) -C src/kernel/ CC="$(CC)" CFLAGS="$(CFLAGS)" 
+	$(MAKE) -C src/kernel/ CC="$(CC)" CFLAGS="$(CFLAGS)" \
+		ASM="$(ASM)" ASMFLAGS="$(ASMFLAGS)"
 	$(MAKE) -C src/drivers/ CC="$(CC)" CFLAGS="$(CFLAGS)"
 	$(MAKE) -C src/lib/ CC="$(CC)" CFLAGS="$(CFLAGS)"
 
