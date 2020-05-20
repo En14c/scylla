@@ -4,7 +4,7 @@
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/interrupt.h>
-
+#include <sys/pic8259.h>
 
 static struct idt_entry idt[IDT_ENTRIES];
 static struct idt_ptr idt_ptr;
@@ -32,6 +32,7 @@ init_idt (void)
             indx, (u32_t)default_interrupt_handler, KERNEL_CS_SEL,
             IDT_INTERRUPT_GATE_DPL0);
 
+    /* CPU exceptions */
     set_idt_entry(
             IDT_CPU_DIV_ZERO_INDX, (u32_t)_cpu_div_zero,
             KERNEL_CS_SEL, IDT_INTERRUPT_GATE_DPL0);
@@ -62,6 +63,56 @@ init_idt (void)
     set_idt_entry(
             IDT_CPU_GPF_INDX, (u32_t)_cpu_general_protection_fault,
             KERNEL_CS_SEL, IDT_INTERRUPT_GATE_DPL0);
+
+    /* IRQs */
+    set_idt_entry(
+            IDT_IRQ0_INDX, (u32_t)_irq0, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ1_INDX, (u32_t)_irq1, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ2_INDX, (u32_t)_irq2, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ3_INDX, (u32_t)_irq3, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ4_INDX, (u32_t)_irq4, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ5_INDX, (u32_t)_irq5, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ6_INDX, (u32_t)_irq6, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ7_INDX, (u32_t)_irq7, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ8_INDX, (u32_t)_irq8, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ9_INDX, (u32_t)_irq9, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ10_INDX, (u32_t)_irq10, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ11_INDX, (u32_t)_irq11, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ12_INDX, (u32_t)_irq12, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ13_INDX, (u32_t)_irq13, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ14_INDX, (u32_t)_irq14, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
+    set_idt_entry(
+            IDT_IRQ15_INDX, (u32_t)_irq15, KERNEL_CS_SEL,
+            IDT_INTERRUPT_GATE_DPL0);
 
     idt_ptr.len  = (sizeof(struct idt_entry) * IDT_ENTRIES) - 1;
     idt_ptr.base = (u32_t)&idt;
