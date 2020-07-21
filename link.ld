@@ -8,6 +8,7 @@ SECTIONS {
         *(.multi_boot_header)
     }
 
+    PROVIDE(k_start = .);
     PROVIDE(k_stext = .);
     .text ALIGN(0x1000) :
     {

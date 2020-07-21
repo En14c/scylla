@@ -20,6 +20,7 @@ section .text
 _kstart:
     lea esp, [ kernelstack + KERNSTACK_SIZE ]  ; esp points to the bottom of the stack (high address)
     
+    push ebx    ;multiboot info
     call kmain
     hlt
 
