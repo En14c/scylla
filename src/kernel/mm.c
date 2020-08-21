@@ -8,6 +8,10 @@
 
 typedef struct physical_memory_info
 {
+    /* kernel's physical memory start address (load address) */
+    u32_t kernel_load_address;
+    /* kernel's physical memory end address (adding the bitmap's size) */
+    u32_t kernel_end_address;
     /* overall size of the available RAM areas */
     u32_t size;
     /* the number of physical RAM frames */
@@ -116,6 +120,73 @@ deallocate_physical_memory_frame (u32_t s_address)
 }
 
 /*
+ * mark a range of physical frames as USED
+ *
+ * @param start_phys_addr: the start physical address for an arbitrary
+ *          physical memory address range (let it be x)
+ * @param end_phys_addr: the end physical address for an arbitrary
+ *          physical memory address range (x) 
+*/
+s32_t
+mark_physical_memory_frames_range_used (
+    u32_t start_phys_addr, u32_t end_phys_addr)
+{
+    u32_t start_frame, end_frame, frame_num;
+    s32_t _ret;
+
+    _ret = PHYSICAL_FRAME_MARK_USED_SUCCESS;
+
+    start_frame = MM_GET_PHYSICAL_MEM_FRAME_NUM(start_phys_addr);
+    end_frame = MM_GET_PHYSICAL_MEM_FRAME_NUM(end_phys_addr);
+
+    for (frame_num = start_frame; frame_num <= end_frame; ++frame_num) {
+        if (mark_physical_frame_used(frame_num)
+                == PHYSICAL_FRAME_MARK_USED_ERROR)
+            break;
+    }
+
+    /*
+     * check that all physical frames in the range have been marked as
+     * USED else (if at least one frame was not allocated) revert the
+     * other frames' status
+    */
+    if (frame_num != (end_frame + 1)) {
+        for (u32_t _frame_num = start_frame;
+                _frame_num <= frame_num; ++_frame_num)
+            mark_physical_frame_free(_frame_num);
+        _ret = PHYSICAL_FRAME_MARK_USED_ERROR;
+    }
+
+    return _ret;
+}
+
+/*
+ * mark a range of physical frames as FREE
+ *
+ * @param start_phys_addr: the start physical address for an arbitrary
+ *          physical memory address range (let it be x)
+ * @param end_phys_addr: the end physical address for an arbitrary
+ *          physical memory address range (x) 
+*/
+s32_t
+mark_physical_memory_frames_range_free (
+        u32_t start_phys_addr, u32_t end_phys_addr)
+{
+    u32_t start_frame, end_frame, frame_num;
+    s32_t _ret;
+
+    _ret = PHYSICAL_FRAME_MARK_FREE_SUCCESS;
+
+    start_frame = MM_GET_PHYSICAL_MEM_FRAME_NUM(start_phys_addr);
+    end_frame = MM_GET_PHYSICAL_MEM_FRAME_NUM(end_phys_addr);
+
+    for (frame_num = start_frame; frame_num <= end_frame; ++frame_num)
+        mark_physical_frame_free(frame_num);
+
+    return _ret;
+}
+
+/*
  * get informations about physical memory mapping, size of 
  * usable physical memory, etc.. from the multiboot information
  * structure that has been created by the bootloader
@@ -152,14 +223,10 @@ detect_physical_memory (multiboot_info_t *mboot_info)
                     (physical_memory_info.frames_num /
                      PHYSICAL_MEM_FRAMES_BITMAP_SLOT_SIZE);
 
-                /*
-                 * get the last physical memory frame number
-                 * that contains the physical memory frames bitmap
-                */
-                u32_t l_frame =
-                    ((u32_t)physical_memory_info.frames_bitmap +
-                     physical_memory_info.frames_bitmap_size) /
-                    PHYSICAL_MEM_FRAME_SIZE;
+                physical_memory_info.kernel_load_address = kernel_start_addr;
+                physical_memory_info.kernel_end_address =
+                    (u32_t)physical_memory_info.frames_bitmap +
+                    physical_memory_info.frames_bitmap_size;
 
                 /*
                  * mark memmory below 1MB and the memory occupied by
@@ -168,8 +235,8 @@ detect_physical_memory (multiboot_info_t *mboot_info)
                  * note that we do not make use of the RAM addresses
                  * below 1MB in this sample kernel
                 */
-                for (u32_t frame = 0;frame <= l_frame;frame++)
-                    mark_physical_frame_used(frame);
+                mark_physical_memory_frames_range_used(
+                        0x0, physical_memory_info.kernel_end_address);
             }
             // GRUB treats the base_addr_low field as offset 0 in
             // the mmap entry structure

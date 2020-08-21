@@ -26,6 +26,19 @@
 #define PHYSICAL_MEM_ADDR_FRAME_ALIGN ~(PHYSICAL_MEM_FRAME_SIZE - 1)
 
 
+
+
+#define MM_PAGE_SIZE  0x1000
+#define MM_FRAME_SIZE MM_PAGE_SIZE
+
+#define MM_PAGE_OFFSET_BITS_NUM  0x0c
+#define MM_FRAME_OFFSET_BITS_NUM MM_PAGE_OFFSET_BITS_NUM
+
+#define MM_GET_PHYSICAL_MEM_FRAME_NUM(phys_addr) \
+    (((u32_t)(phys_addr)) >> MM_FRAME_OFFSET_BITS_NUM)
+
+
+
 /* functions' prototypes */
 void detect_physical_memory(multiboot_info_t *);
 u32_t allocate_physical_memory_frame(void);
