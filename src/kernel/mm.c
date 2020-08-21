@@ -79,8 +79,6 @@ mark_physical_frame_free (u32_t frame_num)
 
     bitmap = physical_memory_info.frames_bitmap;
     bitmap[frame_num / 8] &= ~(1 << (frame_num % 8));
-    if (get_physical_frame_status(frame_num) == PHYSICAL_FRAME_USED)
-        return PHYSICAL_FRAME_MARK_FREE_ERROR;
     return PHYSICAL_FRAME_MARK_FREE_SUCCESS;
 }
 
