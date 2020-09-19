@@ -7,7 +7,7 @@
 /*
  * start address of the VGA color text mode memory
 */
-#define VGA_COLOR_TEXT_MODE_MEM_START_ADDR  0xb8000
+#define VGA_COLOR_TEXT_MODE_MEM_START_ADDR  0xc00b8000
 
 
 /*
@@ -48,12 +48,12 @@ enum {
  * set the char attribute (foreground color, background color)
  * and the char code 
 */
-#define VGA_GEN_CHAR(__chr, __frgrd_clr, __bkgrd_clr)                     \
-    ({                                                                    \
-         u8_t __char_attr =                                               \
-             ((u8_t)(__frgrd_clr) & 0x0f) | ((u8_t)(__bkgrd_clr) << 0x4); \
-         u16_t __char = (__char_attr << 0x8) | (u8_t)(__chr);             \
-         __char;                                                          \
+#define VGA_GEN_CHAR(__chr, __frgrd_clr, __bkgrd_clr)                    \
+    ({                                                                   \
+        u8_t __char_attr =                                               \
+            ((u8_t)(__frgrd_clr) & 0x0f) | ((u8_t)(__bkgrd_clr) << 0x4); \
+        u16_t __char = (__char_attr << 0x8) | (u8_t)(__chr);             \
+        __char;                                                          \
     })
 
 

@@ -4,25 +4,6 @@
 #include <sys/mm.h>
 #include <multiboot.h>
 
-/* ### physical memory manager ### */
-
-typedef struct physical_memory_info
-{
-    /* kernel's physical memory start address (load address) */
-    u32_t kernel_load_address;
-    /* kernel's physical memory end address (adding the bitmap's size) */
-    u32_t kernel_end_address;
-    /* overall size of the available RAM areas */
-    u32_t size;
-    /* the number of physical RAM frames */
-    u32_t frames_num;
-    /* physical frame's size in bytes */
-    u32_t frame_size;
-    /* bitmap for tracking the status of the physical frames (USED || FREE) */
-#define PHYSICAL_MEM_FRAMES_BITMAP_SLOT_SIZE 0x8
-    u32_t frames_bitmap_size;
-    char *frames_bitmap;
-} __attribute__((packed)) physical_memory_info_t;
 
 physical_memory_info_t physical_memory_info;
 
@@ -40,6 +21,35 @@ get_physical_frame_status (u32_t physf_num)
 }
 
 /*
+ * mark frame as used
+*/
+static u32_t
+mark_physical_frame_used (u32_t frame_num)
+{
+    char *bitmap;
+
+    bitmap = physical_memory_info.frames_bitmap;
+    if (__equal__(get_physical_frame_status(frame_num),
+            NO_FREE_PHYSICAL_FRAMES_ERROR))
+        return PHYSICAL_FRAME_MARK_USED_ERROR;
+    bitmap[frame_num / 8] |= 1 << (frame_num % 8);
+    return PHYSICAL_FRAME_MARK_USED_SUCCESS;
+}
+
+/*
+ * mark frame as free
+*/
+static u32_t
+mark_physical_frame_free (u32_t frame_num)
+{
+    char *bitmap;
+
+    bitmap = physical_memory_info.frames_bitmap;
+    bitmap[frame_num / 8] &= ~(1 << (frame_num % 8));
+    return PHYSICAL_FRAME_MARK_FREE_SUCCESS;
+}
+
+/*
  * search the bitmap for the first FREE physical frame
 */
 static u32_t
@@ -50,40 +60,14 @@ get_free_physical_frame ()
     bitmap = physical_memory_info.frames_bitmap;
     for (int i = 0; i < (PHYSICAL_FRAMES_BITMAP_SIZE); i++) {
         for (int j = 0; j < 8; j++) {
-            if (!((bitmap[i] >> j) & 0x1))
+            if (!((bitmap[i] >> j) & 0x1)) {
+                mark_physical_frame_used(i * 8 + j);
                 return i * 8 + j;
+            }
         }
     }
-    // whoops, no physical frames are free
-    return PHYSICAL_FRAME_USED;
-}
 
-/*
- * mark frame as used
-*/
-static s32_t
-mark_physical_frame_used (u32_t frame_num)
-{
-    char *bitmap;
-
-    bitmap = physical_memory_info.frames_bitmap;
-    if (get_physical_frame_status(frame_num) == PHYSICAL_FRAME_USED)
-        return PHYSICAL_FRAME_MARK_USED_ERROR;
-    bitmap[frame_num / 8] |= 1 << (frame_num % 8);
-    return PHYSICAL_FRAME_MARK_USED_SUCCESS;
-}
-
-/*
- * mark frame as free
-*/
-static s32_t
-mark_physical_frame_free (u32_t frame_num)
-{
-    char *bitmap;
-
-    bitmap = physical_memory_info.frames_bitmap;
-    bitmap[frame_num / 8] &= ~(1 << (frame_num % 8));
-    return PHYSICAL_FRAME_MARK_FREE_SUCCESS;
+    return NO_FREE_PHYSICAL_FRAMES_ERROR;
 }
 
 /*
@@ -98,7 +82,7 @@ allocate_physical_memory_frame ()
 
     frame_num = get_free_physical_frame();
     // no free physical memory frames available ?
-    if (frame_num == PHYSICAL_FRAME_USED)
+    if (__equal__(frame_num, NO_FREE_PHYSICAL_FRAMES_ERROR))
         return PHYSICAL_FRAME_ALLOCATE_ERROR;
     physical_mem_address = physical_memory_info.frame_size * frame_num;
     return physical_mem_address;
@@ -114,7 +98,8 @@ deallocate_physical_memory_frame (u32_t s_address)
     u32_t frame_num;
 
     frame_num = s_address / physical_memory_info.frame_size;
-    if (mark_physical_frame_free(frame_num) == PHYSICAL_FRAME_MARK_FREE_ERROR)
+    if (__equal__(mark_physical_frame_free(frame_num),
+            PHYSICAL_FRAME_MARK_FREE_ERROR))
         return PHYSICAL_FRAME_DEALLOCATE_ERROR;
     return PHYSICAL_FRAME_DEALLOCATE_SUCCESS;
 }
@@ -127,7 +112,7 @@ deallocate_physical_memory_frame (u32_t s_address)
  * @param end_phys_addr: the end physical address for an arbitrary
  *          physical memory address range (x) 
 */
-s32_t
+u32_t
 mark_physical_memory_frames_range_used (
     u32_t start_phys_addr, u32_t end_phys_addr)
 {
@@ -140,8 +125,8 @@ mark_physical_memory_frames_range_used (
     end_frame = MM_GET_PHYSICAL_MEM_FRAME_NUM(end_phys_addr);
 
     for (frame_num = start_frame; frame_num <= end_frame; ++frame_num) {
-        if (mark_physical_frame_used(frame_num)
-                == PHYSICAL_FRAME_MARK_USED_ERROR)
+        if (__equal__(mark_physical_frame_used(frame_num),
+                PHYSICAL_FRAME_MARK_USED_ERROR))
             break;
     }
 
@@ -168,7 +153,7 @@ mark_physical_memory_frames_range_used (
  * @param end_phys_addr: the end physical address for an arbitrary
  *          physical memory address range (x) 
 */
-s32_t
+u32_t
 mark_physical_memory_frames_range_free (
         u32_t start_phys_addr, u32_t end_phys_addr)
 {
@@ -197,10 +182,12 @@ detect_physical_memory (multiboot_info_t *mboot_info)
 {
     multiboot_memory_map_entry_t *mmap_entry;
     u32_t mmap_info_end;
-    u32_t kernel_start_addr, kernel_end_addr;
+    u32_t kernel_phys_start_addr, kernel_phys_end_addr;
 
-    kernel_start_addr = (u32_t)&k_start & PHYSICAL_MEM_ADDR_FRAME_ALIGN;
-    kernel_end_addr = (u32_t)&k_end;
+    kernel_phys_start_addr =
+        ((u32_t)&k_start & PHYSICAL_MEM_ADDR_FRAME_ALIGN) -
+        MM_KERNEL_VIRTUAL_LOAD_ADDRESS;
+    kernel_phys_end_addr = (u32_t)&k_end - MM_KERNEL_VIRTUAL_LOAD_ADDRESS;
 
     if (mboot_info->flags & MULTIBOOT_FLAG_MMAP) {
         mmap_entry = (multiboot_memory_map_entry_t *)mboot_info->mmap_addr;
@@ -213,17 +200,19 @@ detect_physical_memory (multiboot_info_t *mboot_info)
             printk("Length: %x Bytes\n", mmap_entry->length_low);
 
             if (mmap_entry->type == MULTIBOOT_MMAP_MEM_AVAILABLE &&
-                    mmap_entry->base_addr_low >= kernel_start_addr) {
+                    mmap_entry->base_addr_low >= kernel_phys_start_addr) {
                 physical_memory_info.size = mmap_entry->length_low;
                 physical_memory_info.frame_size = PHYSICAL_MEM_FRAME_SIZE;
                 physical_memory_info.frames_num =
                     physical_memory_info.size / PHYSICAL_MEM_FRAME_SIZE;
-                physical_memory_info.frames_bitmap = (char *)kernel_end_addr;
+                physical_memory_info.frames_bitmap =
+                    (char *)kernel_phys_end_addr;
                 physical_memory_info.frames_bitmap_size =
                     (physical_memory_info.frames_num /
                      PHYSICAL_MEM_FRAMES_BITMAP_SLOT_SIZE);
 
-                physical_memory_info.kernel_load_address = kernel_start_addr;
+                physical_memory_info.kernel_load_address =
+                    kernel_phys_start_addr;
                 physical_memory_info.kernel_end_address =
                     (u32_t)physical_memory_info.frames_bitmap +
                     physical_memory_info.frames_bitmap_size;
@@ -236,7 +225,7 @@ detect_physical_memory (multiboot_info_t *mboot_info)
                  * below 1MB in this sample kernel
                 */
                 mark_physical_memory_frames_range_used(
-                        0x0, physical_memory_info.kernel_end_address);
+                    0x0, physical_memory_info.kernel_end_address);
             }
             // GRUB treats the base_addr_low field as offset 0 in
             // the mmap entry structure
@@ -245,6 +234,8 @@ detect_physical_memory (multiboot_info_t *mboot_info)
                 ((u32_t) mmap_entry + mmap_entry->size +
                  sizeof(mmap_entry->size));
         }
+        /* set the physical frames bitmap's pointer to it's virtual address */
+        physical_memory_info.frames_bitmap = (char *)&k_end;
         goto detect_physical_memory_success;
     }
     // halt the machine if we can't get the physical memory map
