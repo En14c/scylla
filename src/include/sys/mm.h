@@ -35,8 +35,25 @@ typedef u32_t pte_t;
         hlt();                             \
     } while (0)
 
+#define retrieve_cr3()                \
+    ({                                \
+        u32_t _cr3;                   \
+        __asm__ volatile (            \
+            "movl %%cr3, %%eax  \t\n" \
+            "movl %%eax, %0     \t\n" \
+            : "=m" (_cr3) :           \
+            : "%eax"                  \
+        );                            \
+        _cr3;                         \
+    })
+
+#define current_page_directory() \
+    ({                           \
+        retrieve_cr3();          \
+    })
+
 #define pdir_switch(pdir_phys_addr) \
-    __asm__ (                       \
+    __asm__  volatile (             \
         "movl %0, %%eax     \t\n"   \
         "movl %%eax, %%cr3  \t\n"   \
         :: "m" ((pdir_phys_addr))   \
