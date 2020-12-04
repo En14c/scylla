@@ -186,8 +186,8 @@ detect_physical_memory (multiboot_info_t *mboot_info)
 
     kernel_phys_start_addr =
         ((u32_t)&k_start & PHYSICAL_MEM_ADDR_FRAME_ALIGN) -
-        MM_KERNEL_VIRTUAL_LOAD_ADDRESS;
-    kernel_phys_end_addr = (u32_t)&k_end - MM_KERNEL_VIRTUAL_LOAD_ADDRESS;
+        MM_KERNEL_VIRTUAL_START_ADDRESS;
+    kernel_phys_end_addr = (u32_t)&k_end - MM_KERNEL_VIRTUAL_START_ADDRESS;
 
     if (mboot_info->flags & MULTIBOOT_FLAG_MMAP) {
         mmap_entry = (multiboot_memory_map_entry_t *)mboot_info->mmap_addr;

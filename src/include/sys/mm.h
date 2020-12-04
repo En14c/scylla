@@ -26,6 +26,19 @@ typedef struct physical_memory_info
     char *frames_bitmap;
 } __attribute__((packed)) physical_memory_info_t;
 
+typedef struct virtual_memory_info
+{
+    u32_t kernel_start_address;
+    u32_t kernel_end_address;
+    struct {
+        /* holds the start/end virtual address for the kernel's heap */
+        u32_t start_address;
+        u32_t end_address;
+        /* holds the # bytes assigned the heap on startup*/
+        size_t size;
+    } kheap;
+} __attribute__((packed)) virtual_memory_info_t;
+
 typedef u32_t pde_t;
 typedef u32_t pte_t;
 
@@ -100,7 +113,7 @@ typedef u32_t pte_t;
 #define MM_PAGE_OFFSET_BITS_NUM  0x0c
 #define MM_FRAME_OFFSET_BITS_NUM MM_PAGE_OFFSET_BITS_NUM
 
-#define MM_KERNEL_VIRTUAL_LOAD_ADDRESS 0xc0000000
+#define MM_KERNEL_VIRTUAL_START_ADDRESS 0xc0000000
 
 #define MM_GET_PHYSICAL_MEM_FRAME_NUM(phys_addr) \
     (((u32_t)(phys_addr)) >> MM_FRAME_OFFSET_BITS_NUM)

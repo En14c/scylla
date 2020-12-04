@@ -4,6 +4,7 @@
 #include <sys/pic8259.h>
 #include <sys/pit8253.h>
 #include <sys/mm.h>
+#include <sys/kalloc.h>
 #include <drivers/video.h>
 #include <multiboot.h>
 
@@ -18,5 +19,6 @@ void kmain(multiboot_info_t *mboot_info)
     pic8259_init();
     pit8253_init();
     sti();
+    init_kheap();
     while(1);
 }

@@ -20,6 +20,8 @@ typedef unsigned short u16_t;
 typedef unsigned int   u32_t;
 typedef unsigned long long u64_t;
 
+typedef unsigned int size_t;
+
 #endif /* __X86_ARCH_TARGET */
 
 #endif /* __TYPES_H */

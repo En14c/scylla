@@ -9,6 +9,7 @@
 
 
 extern physical_memory_info_t physical_memory_info;
+virtual_memory_info_t virtual_memory_info;
 
 /* kernel's default page directory, used during context switches, etc... */ 
 struct {
@@ -38,15 +39,21 @@ init_paging ()
     kpdir.ptr[0x3ff] = (u32_t) kpdir.ptr | MM_PDIR_ENTRY_FLAG_PRESENT |
         MM_PDIR_ENTRY_FLAG_WRITABLE;
 
-    kstart_virtaddr = MM_KERNEL_VIRTUAL_LOAD_ADDRESS;
-    kend_virtaddr = MM_KERNEL_VIRTUAL_LOAD_ADDRESS +
+    kstart_virtaddr = MM_KERNEL_VIRTUAL_START_ADDRESS;
+    kend_virtaddr = MM_KERNEL_VIRTUAL_START_ADDRESS +
         physical_memory_info.kernel_end_address;
     kstart_virtaddr = MM_VIRTADDR_ROUND_PAGE_UP(kstart_virtaddr);
     kend_virtaddr = MM_VIRTADDR_ROUND_PAGE_UP(kend_virtaddr);
 
+    virtual_memory_info.kernel_start_address = kstart_virtaddr;
+    virtual_memory_info.kernel_end_address = kend_virtaddr;
+
     /* map the kernel's virtual address spaces */
     for (virtaddr = kstart_virtaddr, physaddr = 0x0; virtaddr <= kend_virtaddr;
             virtaddr += MM_PAGE_SIZE, physaddr += MM_FRAME_SIZE) {
+        if (virtaddr == kend_virtaddr)
+            virtual_memory_info.kernel_end_address =
+                kend_virtaddr + MM_PAGE_SIZE;
         pdir_indx = MM_GET_PDIR_INDEX(virtaddr);
         ptable_indx = MM_GET_PTABLE_INDEX(virtaddr);
 
